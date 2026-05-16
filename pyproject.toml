@@ -1,0 +1,29 @@
+[project]
+name = "jira-integration-wrapper"
+version = "0.1.0"
+description = "Python wrapper around the jira package that abstracts server URL and authentication (token/basic auth)."
+authors = [{ name = "Erik K. Larson", email = "erik.k.larson@gmail.com" }]
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "jira>=3.8.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+strict = true
+warn_return_any = true
