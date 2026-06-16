@@ -10,7 +10,7 @@ from jira_integration_wrapper import (
     get_jira_client,
     reset_jira_client,
 )
-from jira_integration_wrapper.exceptions import JiraConnectionError
+from jira_integration_wrapper.exceptions import JiraAuthError, JiraConnectionError
 
 
 @pytest.fixture(autouse=True)
@@ -143,3 +143,48 @@ def test_connection_error_is_wrapped(mock_jira_class):
 
     with pytest.raises(JiraConnectionError, match="Failed to connect"):
         _ = client.jira
+
+
+@patch("jira_integration_wrapper.client.JIRA")
+def test_auth_error_is_wrapped(mock_jira_class):
+    from jira.exceptions import JIRAError
+
+    mock_jira_class.side_effect = JIRAError("unauthorized", status_code=401)
+
+    client = JiraClient(settings=make_fake_settings())
+
+    with pytest.raises(JiraAuthError, match="authentication failed"):
+        _ = client.jira
+
+
+@patch("jira_integration_wrapper.client.JIRA")
+def test_token_auth_client_uses_pat(mock_jira_class):
+    settings = JiraSettings(
+        server="https://jira.example.com",
+        token_auth="pat-token",
+    )
+    client = JiraClient(settings=settings)
+    _ = client.jira
+
+    mock_jira_class.assert_called_once()
+    _, kwargs = mock_jira_class.call_args
+    assert kwargs["token_auth"] == "pat-token"
+    assert "basic_auth" not in kwargs
+
+
+@patch("jira_integration_wrapper.client.JIRA")
+def test_proxies_and_verify_ssl_are_passed(mock_jira_class):
+    settings = JiraSettings(
+        server="https://example.atlassian.net",
+        email="user@example.com",
+        api_token="fake-token",
+        verify_ssl=False,
+        proxies={"https": "http://proxy:8080"},
+    )
+    client = JiraClient(settings=settings)
+    _ = client.jira
+
+    mock_jira_class.assert_called_once()
+    _, kwargs = mock_jira_class.call_args
+    assert kwargs["options"]["verify"] is False
+    assert kwargs["options"]["proxies"] == {"https": "http://proxy:8080"}

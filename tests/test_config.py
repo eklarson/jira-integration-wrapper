@@ -1,6 +1,7 @@
 """Tests for configuration loading (no network)."""
 
 import json
+from unittest.mock import patch
 
 import pytest
 
@@ -8,6 +9,7 @@ from jira_integration_wrapper.config import (
     JiraSettings,
     get_jira_settings,
 )
+from jira_integration_wrapper.exceptions import JiraConfigError
 
 
 def test_get_jira_settings_explicit_values(monkeypatch):
@@ -58,20 +60,22 @@ def test_proxies_from_separate_vars(monkeypatch):
 
 def test_missing_server_raises_clear_error(monkeypatch):
     monkeypatch.delenv("JIRA_SERVER", raising=False)
-    with pytest.raises(ValueError, match="JIRA_SERVER"):
+    with pytest.raises(JiraConfigError, match="JIRA_SERVER"):
         get_jira_settings(load_env=False)
 
 
-def test_missing_auth_raises_clear_error_when_load_env(monkeypatch):
-    """When load_env=True path is used and no auth is present, we should fail fast."""
+@patch("jira_integration_wrapper.config._ensure_dotenv_loaded")
+def test_missing_auth_raises_clear_error_when_load_env(mock_load_dotenv, monkeypatch):
+    """When load_env=True and no auth is present, we should fail fast."""
     monkeypatch.setenv("JIRA_SERVER", "https://example.atlassian.net")
-    # No email/api_token and no token_auth
     monkeypatch.delenv("JIRA_EMAIL", raising=False)
     monkeypatch.delenv("JIRA_API_TOKEN", raising=False)
     monkeypatch.delenv("JIRA_TOKEN_AUTH", raising=False)
 
-    with pytest.raises(ValueError, match="No Jira authentication"):
+    with pytest.raises(JiraConfigError, match="No Jira authentication"):
         get_jira_settings(load_env=True)
+
+    mock_load_dotenv.assert_called_once()
 
 
 def test_jira_settings_direct_construction_allows_incomplete():
@@ -79,3 +83,16 @@ def test_jira_settings_direct_construction_allows_incomplete():
     s = JiraSettings(server="https://example.com")
     assert s.has_auth() is False
     assert s.server == "https://example.com"
+
+
+def test_invalid_proxies_json_logs_warning_and_falls_back(monkeypatch, caplog):
+    monkeypatch.setenv("JIRA_SERVER", "https://example.atlassian.net")
+    monkeypatch.setenv("JIRA_TOKEN_AUTH", "pat-xyz")
+    monkeypatch.setenv("JIRA_PROXIES", "not-valid-json")
+    monkeypatch.setenv("JIRA_HTTPS_PROXY", "http://https-proxy:3128")
+
+    with caplog.at_level("WARNING"):
+        settings = get_jira_settings(load_env=False)
+
+    assert settings.proxies == {"https": "http://https-proxy:3128"}
+    assert "Invalid JIRA_PROXIES JSON" in caplog.text
