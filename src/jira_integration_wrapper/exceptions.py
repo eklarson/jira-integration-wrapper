@@ -4,6 +4,12 @@ class JiraIntegrationError(Exception):
     pass
 
 
+class JiraConfigError(JiraIntegrationError):
+    """Raised when required configuration is missing or invalid."""
+
+    pass
+
+
 class JiraAuthError(JiraIntegrationError):
     """Raised when authentication to Jira fails (bad credentials, missing token, etc.)."""
 
