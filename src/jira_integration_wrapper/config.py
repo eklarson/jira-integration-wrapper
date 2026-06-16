@@ -1,8 +1,13 @@
 import json
+import logging
 import os
 from dataclasses import dataclass
 
 from dotenv import load_dotenv
+
+from .exceptions import JiraConfigError
+
+logger = logging.getLogger(__name__)
 
 
 _dotenv_loaded = False
@@ -59,7 +64,7 @@ def get_jira_settings(*, load_env: bool = True) -> JiraSettings:
 
     server = os.getenv("JIRA_SERVER")
     if not server:
-        raise ValueError(
+        raise JiraConfigError(
             "JIRA_SERVER environment variable is required.\n"
             "Set it in your environment or .env file. "
             "See .env.example for the expected format."
@@ -74,8 +79,9 @@ def get_jira_settings(*, load_env: bool = True) -> JiraSettings:
             if isinstance(parsed, dict):
                 proxies = {str(k): str(v) for k, v in parsed.items()}
         except (json.JSONDecodeError, TypeError):
-            # Fall through to separate proxy vars or leave as None
-            pass
+            logger.warning(
+                "Invalid JIRA_PROXIES JSON; falling back to JIRA_HTTP_PROXY / JIRA_HTTPS_PROXY"
+            )
 
     if proxies is None:
         http_proxy = os.getenv("JIRA_HTTP_PROXY")
@@ -100,7 +106,7 @@ def get_jira_settings(*, load_env: bool = True) -> JiraSettings:
     # We allow construction of incomplete settings (for tests/advanced use),
     # but fail fast when coming through the normal env path.
     if load_env and not settings.has_auth():
-        raise ValueError(
+        raise JiraConfigError(
             "No Jira authentication configured.\n"
             "Set either:\n"
             "  - JIRA_EMAIL + JIRA_API_TOKEN (for Jira Cloud), or\n"
