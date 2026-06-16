@@ -98,11 +98,10 @@ def link_issues_to_epic(epic_key: str, issue_keys: List[str], dry_run: bool = Fa
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Link one or more Jira issues to an Epic."
-    )
+    parser = argparse.ArgumentParser(description="Link one or more Jira issues to an Epic.")
     parser.add_argument(
-        "-e", "--epic",
+        "-e",
+        "--epic",
         required=True,
         help="The Epic key to link issues to (e.g. SCRUM-12)",
     )
@@ -117,7 +116,8 @@ def parse_args():
         help="Show what would be linked without making changes",
     )
     parser.add_argument(
-        "-y", "--yes",
+        "-y",
+        "--yes",
         action="store_true",
         help="Skip confirmation prompt",
     )

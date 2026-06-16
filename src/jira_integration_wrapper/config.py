@@ -38,9 +38,7 @@ class JiraSettings:
 
     def has_auth(self) -> bool:
         """Return True if at least one authentication method is configured."""
-        return bool(
-            self.token_auth or (self.email and self.api_token)
-        )
+        return bool(self.token_auth or (self.email and self.api_token))
 
 
 def get_jira_settings(*, load_env: bool = True) -> JiraSettings:

@@ -156,13 +156,18 @@ def create_issue(
     except Exception as exc:
         # Provide friendlier messages for common errors
         error_str = str(exc)
-        if "project" in error_str.lower() and ("doesn't exist" in error_str or "permission" in error_str):
+        if "project" in error_str.lower() and (
+            "doesn't exist" in error_str or "permission" in error_str
+        ):
             print(
                 f"\n❌ Error: The project '{project}' does not exist or you don't have permission "
                 "to create issues in it.",
                 file=sys.stderr,
             )
-            print("   Tip: Run with --list-projects to see the projects you have access to.", file=sys.stderr)
+            print(
+                "   Tip: Run with --list-projects to see the projects you have access to.",
+                file=sys.stderr,
+            )
         else:
             print(f"\n❌ Failed to create issue: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -175,15 +180,18 @@ def parse_args() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "-p", "--project",
+        "-p",
+        "--project",
         help="Jira project key (e.g. SCRUM, TEAM, OPS). Required unless --list-projects is used.",
     )
     parser.add_argument(
-        "-s", "--summary",
+        "-s",
+        "--summary",
         help="Short summary / title of the issue. Required unless --list-projects is used.",
     )
     parser.add_argument(
-        "-d", "--description",
+        "-d",
+        "--description",
         default="",
         help="Detailed description of the issue",
     )
@@ -198,7 +206,8 @@ def parse_args() -> argparse.Namespace:
         help="Print what would be created without actually creating the issue",
     )
     parser.add_argument(
-        "-y", "--yes",
+        "-y",
+        "--yes",
         action="store_true",
         help="Skip the confirmation prompt before creating a real issue",
     )
@@ -221,7 +230,10 @@ def main() -> NoReturn:
 
     # For normal creation mode, project and summary are required
     if not args.project or not args.summary:
-        print("Error: --project and --summary are required when not using --list-projects.", file=sys.stderr)
+        print(
+            "Error: --project and --summary are required when not using --list-projects.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     create_issue(
