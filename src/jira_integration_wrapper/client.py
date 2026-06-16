@@ -91,7 +91,9 @@ class JiraClient:
             return client
 
         except JIRAError as e:
-            logger.error("Jira connection failed: %s", e)
+            logger.error("Jira request failed: %s", e)
+            if getattr(e, "status_code", None) in (401, 403):
+                raise JiraAuthError(f"Jira authentication failed: {e}") from e
             raise JiraConnectionError(f"Failed to connect to Jira: {e}") from e
 
     def __getattr__(self, name: str) -> Any:
